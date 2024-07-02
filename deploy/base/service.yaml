@@ -1,0 +1,23 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: signalilo-scrubbed
+spec:
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+    - name: scrubbed
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: signalilo
+      protocol: TCP
+      port: 8888
+      targetPort: 8888
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: ClientIP
+  selector: {}
+
