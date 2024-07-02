@@ -1,4 +1,4 @@
-FROM docker.io/library/python:3.11 as scrubbed
+FROM docker.io/library/python:3.12 as scrubbed
 
 WORKDIR /src
 
