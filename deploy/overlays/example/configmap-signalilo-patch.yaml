@@ -1,0 +1,16 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: signalilo
+data:
+  SIGNALILO_ICINGA_CA: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  SIGNALILO_ICINGA_DEBUG: "0"
+  SIGNALILO_ICINGA_HOSTNAME: host.example.com
+  SIGNALILO_ICINGA_URL: |-
+    https://master1.icinga.example.com:5665
+    https://master2.icinga.example.com:5665
+  SIGNALILO_ICINGA_USERNAME: api-username
+  SIGNALILO_UUID: 00000000-0000-0000-0000-000000000000
