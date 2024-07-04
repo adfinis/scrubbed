@@ -8,6 +8,7 @@ ignore = [
 	"D213",    # we prefer multi-line-summary-first-line (D212)
 	"FIX002",  # we do annotate needed fixes in-code and are ignoring this, hoping to reactive it once it can be downgraded to a warning
 	"ISC001",  # ignored due to conflict with formatter
+	"ANN201",  # remove this when we implement type annotations across the board
 ]
 
 [lint.per-file-ignores]

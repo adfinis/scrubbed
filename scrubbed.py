@@ -1,9 +1,13 @@
 #!/bin/env python3
+"""Receive alerts, scrub them from private data, and forward them."""
 
-from flask import Flask, request, jsonify
-import requests
+from __future__ import annotations
+
 import logging
 import os
+
+import requests
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -33,17 +37,20 @@ COMMON_LABELS = os.environ.get("SCRUBBED_COMMON_LABELS", "alertname severity").s
 COMMON_ANNOTATIONS = os.environ.get("SCRUBBED_COMMON_ANNOTATIONS", "").split()
 
 # Service configuration
+HOST = os.environ.get("SCRUBBED_LISTEN_HOST", "0.0.0.0")  # noqa: S104  # listening on all instances is fine for now
 PORT = os.environ.get("SCRUBBED_LISTEN_PORT", 8080)
 URL = os.environ.get("SCRUBBED_DESTINATION_URL", "http://localhost:6725")
 
 
-def redact_fields(fields, keys_to_keep):
+def redact_fields(fields: dict[str, str], keys_to_keep: list[str]):
+    """Scrub individual keys in an alert."""
     return {
         key: (fields[key] if key in keys_to_keep else REDACTED_STRING) for key in fields
     }
 
 
-def scrub(alert):
+def scrub(alert: dict):
+    """Scrub several alerts."""
     for a in alert["alerts"]:
         a["labels"] = redact_fields(a["labels"], ALERT_LABELS)
         a["annotations"] = redact_fields(a["annotations"], ALERT_ANNOTATIONS)
@@ -59,19 +66,20 @@ def scrub(alert):
 
 @app.post("/webhook")
 def webhook():
+    """Receive an alert message, scrub it and forward it to a alert receiver."""
     if request.is_json:
         try:
             alert = request.get_json()
 
             scrub(alert)
 
-            logger.debug(f"sending:\n{alert}")
+            logger.debug("sending: \n%s", alert)
 
             session = requests.Session()
 
             # Copy headers
             session.headers.clear()
-            for h in request.headers.keys():
+            for h in request.headers:
                 session.headers[h] = request.headers.get(h)
 
             r = session.post(URL, json=alert)
@@ -80,14 +88,14 @@ def webhook():
                 "status": "success",
                 "message": f"{msg}, status code {r.status_code}",
             }
-            logger.info(f"{msg} with code {r.status_code}")
+            logger.info("%s with code %s", msg, r.status_code)
             return jsonify(response), r.status_code
         except Exception as e:
             response = {
                 "status": "error",
                 "message": str(e),
             }
-            logger.error(str(e))
+            logger.exception(msg=str(e))
             return jsonify(response), 500
     else:
         msg = "request must be in JSON format"
@@ -101,10 +109,11 @@ def webhook():
 
 @app.route("/healthz")
 def health_check():
+    """Endpoint for health probes."""
     return "OK", 200
 
 
 if __name__ == "__main__":
     from waitress import serve
 
-    serve(app, host="0.0.0.0", port=PORT)
+    serve(app, host=HOST, port=PORT)
