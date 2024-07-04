@@ -10,11 +10,40 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.x
+          cache: pip
       - name: ruff
         run: |
-          pip install -r requirements-dev.txt
+          pip install '.[test]'
           ruff format --check
           ruff check . --output-format=github
+  pytest:
+    runs-on: ubuntu-latest
+    name: Test python ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        python-version:
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+        experimental: [false]
+        include:
+          - python-version: '3.x'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: pytest
+        run: |
+          pip install '.[test]'
+          pip install pytest-github-actions-annotate-failures
+          pytest --cov --cov-fail-under=100
   shellcheck:
     runs-on: ubuntu-latest
     steps:

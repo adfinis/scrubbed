@@ -1,0 +1,31 @@
+[project]
+name = "signalilo-scrubbed"
+description = "Signalilo with alert scrubber included"
+version = "0.0.0"
+authors = [
+    { name = "Adfinis", email = "support@adfinis.com" }
+]
+
+dependencies = [
+    "Flask==3.0.3",
+    "requests==2.32.3",
+    "pyinstaller==6.8.0",
+    "waitress==3.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "ruff==0.5.0",
+    "types-waitress==3.0.0.20240423",
+    "types-requests==2.32.0.20240622",
+    "pytest==8.2.2",
+    "pytest-cov==5.0.0",
+    "requests-mock==1.12.1",
+]
+
+[tool.flit.module]
+name = "scrubbed"
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]

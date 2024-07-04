@@ -37,9 +37,10 @@ COMMON_LABELS = os.environ.get("SCRUBBED_COMMON_LABELS", "alertname severity").s
 COMMON_ANNOTATIONS = os.environ.get("SCRUBBED_COMMON_ANNOTATIONS", "").split()
 
 # Service configuration
-HOST = os.environ.get("SCRUBBED_LISTEN_HOST", "0.0.0.0")  # noqa: S104  # listening on all instances is fine for now
+HOST = os.environ.get("SCRUBBED_LISTEN_HOST", "127.0.0.1")
 PORT = os.environ.get("SCRUBBED_LISTEN_PORT", 8080)
 URL = os.environ.get("SCRUBBED_DESTINATION_URL", "http://localhost:6725")
+TIMEOUT = 60
 
 
 def redact_fields(fields: dict[str, str], keys_to_keep: list[str]):
@@ -75,14 +76,12 @@ def webhook():
 
             logger.debug("sending: \n%s", alert)
 
-            session = requests.Session()
-
-            # Copy headers
-            session.headers.clear()
-            for h in request.headers:
-                session.headers[h] = request.headers.get(h)
-
-            r = session.post(URL, json=alert)
+            r = requests.post(
+                URL,
+                json=alert,
+                headers=request.headers,
+                timeout=TIMEOUT,
+            )
             msg = "alert received and processed"
             response = {
                 "status": "success",
@@ -108,12 +107,12 @@ def webhook():
 
 
 @app.route("/healthz")
-def health_check():
+def health_check():  # pragma: nocover
     """Endpoint for health probes."""
     return "OK", 200
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: nocover
     from waitress import serve
 
     serve(app, host=HOST, port=PORT)
