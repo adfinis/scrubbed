@@ -48,7 +48,7 @@ type (
 		Receiver          string            `json:"receiver" validate:"required"`
 		GroupLabels       map[string]string `json:"groupLabels" validate:"required"`
 		CommonLabels      map[string]string `json:"commonLabels" validate:"required"`
-		CommonAnnotations map[string]string `json:"commonAnnotations" validate:"required"`
+		CommonAnnotations map[string]string `json:"commonAnnotations"`
 		ExternalURL       string            `json:"externalURL" validate:"required"`
 		Alerts            []Alert           `json:"alerts" validate:"required"`
 	}
@@ -123,7 +123,7 @@ func webhookHandler(cfg Config) http.HandlerFunc {
 			return
 		}
 
-		slog.Info("Received JSON: " + toJSONString(alert))
+		slog.Debug("Received JSON: " + toJSONString(alert))
 
 		validate := validator.New()
 		err := validate.Struct(alert)
@@ -138,7 +138,7 @@ func webhookHandler(cfg Config) http.HandlerFunc {
 
 		scrub(&alert, cfg)
 
-		slog.Info("Sending JSON: " + toJSONString(alert))
+		slog.Debug("Sending JSON: " + toJSONString(alert))
 
 		client := &http.Client{Timeout: 60 * time.Second}
 		req, err := http.NewRequest("POST", cfg.Url, strings.NewReader(toJSONString(alert)))
