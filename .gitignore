@@ -1,6 +1,1 @@
-__pycache__/
-venv/
-build/
-dist/
-*.spec
-.venv/
+scrubbed

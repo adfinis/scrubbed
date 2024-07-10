@@ -83,10 +83,17 @@ func main() {
 	{
 		var err error
 
+		server := &http.Server{
+			Addr:         cfg.Host + ":" + cfg.Port,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			Handler:      router,
+		}
+
 		if cfg.TLSEnable {
-			err = http.ListenAndServeTLS(cfg.Host+":"+cfg.Port, cfg.TLSCertPath, cfg.TLSKeyPath, router)
+			err = server.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
 		} else {
-			err = http.ListenAndServe(cfg.Host+":"+cfg.Port, router)
+			err = server.ListenAndServe()
 		}
 
 		if err != nil {

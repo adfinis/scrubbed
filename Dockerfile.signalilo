@@ -10,7 +10,11 @@ COPY *.go Makefile .
 
 RUN make build
 
+FROM quay.io/vshn/signalilo:v0.14.0 AS signalilo
+
 FROM registry.access.redhat.com/ubi9/ubi-micro:9.4
+
+COPY --from=signalilo /usr/local/bin/signalilo /usr/local/bin/
 
 COPY --from=builder /src/scrubbed /usr/local/bin/
 
