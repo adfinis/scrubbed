@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -10,62 +11,73 @@ import (
 	"strings"
 	"time"
 
-	"github.com/caarlos0/env/v11"
+	"github.com/caarlos0/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
-type (
-	Config struct {
-		LogLevel       slog.Level `env:"SCRUBBED_LOG_LEVEL" envDefault:"INFO"`
-		RedactedString string     `env:"SCRUBBED_REDACTED_STRING" envDefault:"REDACTED"`
+//go:generate envdoc --output environment.md
+type Config struct {
+	// Set logging level
+	LogLevel string `env:"SCRUBBED_LOG_LEVEL" envDefault:"INFO"`
+	// Set literal string to redact values with
+	RedactedString string `env:"SCRUBBED_REDACTED_STRING" envDefault:"REDACTED"`
+	// Space separated alert labels to keep
+	AlertLabels []string `env:"SCRUBBED_ALERT_LABELS" envDefault:"alertname severity" envSeparator:" "`
+	// Space separated alert annotations to keep
+	AlertAnnotations []string `env:"SCRUBBED_ALERT_ANNOTATIONS" envDefault:"" envSeparator:" "`
+	// Space separated group labels to keep
+	GroupLabels []string `env:"SCRUBBED_GROUP_LABELS" envDefault:"" envSeparator:" "`
+	// Space separated common labels to keep
+	CommonLabels []string `env:"SCRUBBED_COMMON_LABELS" envDefault:"alertname severity" envSeparator:" "`
+	// Space separated common annotations to keep
+	CommonAnnotations []string `env:"SCRUBBED_COMMON_ANNOTATIONS" envDefault:"" envSeparator:" "`
+	// Service listener address
+	Host string `env:"SCRUBBED_LISTEN_HOST" envDefault:"127.0.0.1"`
+	// Service listener port
+	Port string `env:"SCRUBBED_LISTEN_PORT" envDefault:"8080"`
+	// Enable TLS
+	TLSEnable bool `env:"SCRUBBED_LISTEN_TLS_ENABLE" envDefault:"FALSE"`
+	// Path to TLS certificate
+	TLSCertPath string `env:"SCRUBBED_LISTEN_TLS_CERT_PATH" envDefault:"tls.crt"`
+	// Path to TLS key
+	TLSKeyPath string `env:"SCRUBBED_LISTEN_TLS_KEY_PATH" envDefault:"tls.key"`
+	// Webhook destination URL e.g. https://monitoring.example.com/webhook?foo=bar
+	Url string `env:"SCRUBBED_DESTINATION_URL,required"`
+}
 
-		AlertLabels       []string `env:"SCRUBBED_ALERT_LABELS" envDefault:"alertname severity" envSeparator:" "`
-		AlertAnnotations  []string `env:"SCRUBBED_ALERT_ANNOTATIONS" envDefault:"" envSeparator:" "`
-		GroupLabels       []string `env:"SCRUBBED_GROUP_LABELS" envDefault:"" envSeparator:" "`
-		CommonLabels      []string `env:"SCRUBBED_COMMON_LABELS" envDefault:"alertname severity" envSeparator:" "`
-		CommonAnnotations []string `env:"SCRUBBED_COMMON_ANNOTATIONS" envDefault:"" envSeparator:" "`
+type statusResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
 
-		Host        string `env:"SCRUBBED_LISTEN_HOST" envDefault:"127.0.0.1"`
-		Port        string `env:"SCRUBBED_LISTEN_PORT" envDefault:"8080"`
-		TLSEnable   bool   `env:"SCRUBBED_LISTEN_TLS_ENABLE" envDefault:"FALSE"`
-		TLSCertPath string `env:"SCRUBBED_LISTEN_TLS_CERT_PATH" envDefault:"tls.crt"`
-		TLSKeyPath  string `env:"SCRUBBED_LISTEN_TLS_KEY_PATH" envDefault:"tls.key"`
-		Url         string `env:"SCRUBBED_DESTINATION_URL,required"`
-	}
+// HookMessage is the message we receive from Alertmanager.
+type HookMessage struct {
+	Version           string            `json:"version" validate:"required"`
+	GroupKey          string            `json:"groupKey" validate:"required"`
+	TruncatedAlerts   int               `json:"truncatedAlerts" validate:"number"`
+	Status            string            `json:"status" validate:"required"`
+	Receiver          string            `json:"receiver" validate:"required"`
+	GroupLabels       map[string]string `json:"groupLabels" validate:"required"`
+	CommonLabels      map[string]string `json:"commonLabels" validate:"required"`
+	CommonAnnotations map[string]string `json:"commonAnnotations"`
+	ExternalURL       string            `json:"externalURL" validate:"required"`
+	Alerts            []Alert           `json:"alerts" validate:"required"`
+}
 
-	statusResponse struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-
-	// HookMessage is the message we receive from Alertmanager.
-	HookMessage struct {
-		Version           string            `json:"version" validate:"required"`
-		GroupKey          string            `json:"groupKey" validate:"required"`
-		TruncatedAlerts   int               `json:"truncatedAlerts" validate:"number"`
-		Status            string            `json:"status" validate:"required"`
-		Receiver          string            `json:"receiver" validate:"required"`
-		GroupLabels       map[string]string `json:"groupLabels" validate:"required"`
-		CommonLabels      map[string]string `json:"commonLabels" validate:"required"`
-		CommonAnnotations map[string]string `json:"commonAnnotations"`
-		ExternalURL       string            `json:"externalURL" validate:"required"`
-		Alerts            []Alert           `json:"alerts" validate:"required"`
-	}
-
-	// Alert is a single alert.
-	Alert struct {
-		Status       string            `json:"status"             validate:"required"`
-		Labels       map[string]string `json:"labels"             validate:"required"`
-		Annotations  map[string]string `json:"annotations"        validate:"required"`
-		StartsAt     string            `json:"startsAt,omitempty" validate:"required"`
-		EndsAt       string            `json:"endsAt,omitempty"   validate:"required"`
-		GeneratorURL string            `json:"generatorURL"       validate:"required"`
-		Fingerprint  string            `json:"fingerprint"        validate:"required"`
-	}
-)
+// Alert is a single alert.
+type Alert struct {
+	Status       string            `json:"status"             validate:"required"`
+	Labels       map[string]string `json:"labels"             validate:"required"`
+	Annotations  map[string]string `json:"annotations"        validate:"required"`
+	StartsAt     string            `json:"startsAt,omitempty" validate:"required"`
+	EndsAt       string            `json:"endsAt,omitempty"   validate:"required"`
+	GeneratorURL string            `json:"generatorURL"       validate:"required"`
+	Fingerprint  string            `json:"fingerprint"        validate:"required"`
+}
 
 func main() {
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	cfg := Config{}
@@ -73,10 +85,16 @@ func main() {
 		slog.Error("Parsing environment variables", "error", err)
 	}
 
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel})))
+	level := slog.LevelInfo
+	if err := level.UnmarshalText([]byte(cfg.LogLevel)); err != nil {
+		slog.Warn("Couldn't parse SCRUBBED_LOG_LEVEL, defaulting to INFO")
+	}
+	slog.Info("Logging setup", "level", level)
+
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/webhook", webhookHandler(cfg)).Methods("POST")
+	router.HandleFunc("/webhook", webhookHandler(cfg, postToWebhook)).Methods("POST")
 	router.HandleFunc("/healthz", healthCheckHandler).Methods("GET")
 
 	slog.Info("Starting server", "Host", cfg.Host, "Port", cfg.Port)
@@ -102,10 +120,28 @@ func main() {
 	}
 }
 
-func webhookHandler(cfg Config) http.HandlerFunc {
+func postToWebhook(url string, header http.Header, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = header
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, err
+}
+
+func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*http.Response, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var alert HookMessage
 
+		// Check for correct Content-type header.
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(r.Header.Get("Content-Type"), ";")[0]))
 		if mediaType != "application/json" {
 			msg := "Content-Type header is not application/json"
@@ -115,6 +151,7 @@ func webhookHandler(cfg Config) http.HandlerFunc {
 			return
 		}
 
+		// Decode body to HookMessage struct.
 		if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 			msg := fmt.Sprintf("Failed to decode JSON: %v", err)
 			slog.Error(msg)
@@ -125,6 +162,7 @@ func webhookHandler(cfg Config) http.HandlerFunc {
 
 		slog.Debug("Received JSON: " + toJSONString(alert))
 
+		// Validate HookMessage.
 		validate := validator.New()
 		err := validate.Struct(alert)
 
@@ -136,43 +174,44 @@ func webhookHandler(cfg Config) http.HandlerFunc {
 			return
 		}
 
+		// Scrub it.
 		scrub(&alert, cfg)
 
 		slog.Debug("Sending JSON: " + toJSONString(alert))
 
-		client := &http.Client{Timeout: 60 * time.Second}
-		req, err := http.NewRequest("POST", cfg.Url, strings.NewReader(toJSONString(alert)))
-
+		// Post it to upstream URL.
+		resp, err := postFunc(cfg.Url, r.Header, strings.NewReader(toJSONString(alert)))
 		if err != nil {
-			msg := fmt.Sprintf("Failed to create request: %v", err)
+			msg := fmt.Sprintf("Failed to post to webhook: %v", err)
 			slog.Error(msg)
 			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
-
 			return
 		}
 
-		req.Header = r.Header
-		resp, err := client.Do(req)
-
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to send request: %v", err)
+			msg := fmt.Sprintf("Couldn't read received body %v", err)
 			slog.Error(msg)
 			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
-
 			return
 		}
 
 		defer resp.Body.Close()
 
-		msg := fmt.Sprintf("alert received and processed with code %d", resp.StatusCode)
+		// Prepare response to original webhook caller based on response we receive.
 
-		response := statusResponse{
-			Status:  "success",
-			Message: msg,
+		status := "success"
+		if resp.StatusCode != 200 {
+			status = "warning"
+			slog.Warn("Received response from upstream", "code", resp.StatusCode, "body", body)
+		} else {
+			slog.Info("Received response from upstream", "code", resp.StatusCode, "body", body)
 		}
 
-		slog.Info(msg)
-		w.WriteHeader(resp.StatusCode)
+		response := statusResponse{
+			Status:  status,
+			Message: fmt.Sprintf("Alert received and processed with code %d and body %s", resp.StatusCode, body),
+		}
 
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			msg := fmt.Sprintf("Failed to encode: %v", err)

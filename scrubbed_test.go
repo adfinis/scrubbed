@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -147,6 +148,17 @@ func TestHealthCheckHandler(t *testing.T) {
 	}
 }
 
+func postToWebhookMock(url string, header http.Header, body io.Reader) (*http.Response, error) {
+
+	resp := http.Response{
+		StatusCode: 200,
+		Status:     "200 OK",
+		Body:       io.NopCloser(strings.NewReader("OK")),
+	}
+
+	return &resp, nil
+}
+
 func TestWebhookHandler(t *testing.T) {
 	t.Parallel()
 
@@ -154,7 +166,7 @@ func TestWebhookHandler(t *testing.T) {
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	webhookHandler(cfg)(w, r)
+	webhookHandler(cfg, postToWebhookMock)(w, r)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf(`webhookHandler return code is %v, expected %v`, w.Code, http.StatusOK)
