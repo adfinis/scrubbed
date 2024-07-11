@@ -1,4 +1,4 @@
-name: Release Container Image
+name: Release Container Image - Standalone
 
 on:
   schedule:
