@@ -21,6 +21,10 @@ SIGNALILO_ALERTMANAGER_BEARER_TOKEN: foo
 SIGNALILO_ICINGA_PASSWORD: bar
 ```
 
+### Proxy
+
+Implicitly uses default HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables
+
 ### Alertmanager
 
 Add receiver to Alertmanager configuration:
