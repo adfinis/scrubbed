@@ -1,7 +1,17 @@
 {
   "plugins": [
-    ["@semantic-release/exec", {
-      "publishCmd": "sed -i 's/\(newTag:\).*/\1 ${nextRelease.version}/' deploy/kustomize/overlays/*/kustomization.yaml"
-    }],
+    [
+      "@semantic-release/exec",
+      {
+        "publishCmd": "echo \"Running sed with exec plugin\" && sed -i 's/\\(newTag:\\).*/\\1 ${nextRelease.version}/' deploy/kustomize/overlays/*/kustomization.yaml"
+      },
+      "@semantic-release/git",
+      {
+        "assets": [
+          "deploy/kustomize/overlays/*/kustomization.yaml"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
   ]
 }
