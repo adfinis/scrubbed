@@ -1,4 +1,4 @@
-# Alertmanager Webhook Content Scrubbing
+# Alertmanager Webhook Content Scrubber
 
 This repository creates and publishes Docker image for deployment of Alertmanager filtering proxy.
 
