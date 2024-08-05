@@ -2,7 +2,12 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: signalilo
+immutable: false
 data:
+  SIGNALILO_ALERTMANAGER_PLUGINOUTPUT_ANNOTATIONS: |
+    description
+    message
+  SIGNALILO_ALERTMANAGER_PORT: '8888'
   SIGNALILO_ICINGA_CA: |
     -----BEGIN CERTIFICATE-----
     ...
