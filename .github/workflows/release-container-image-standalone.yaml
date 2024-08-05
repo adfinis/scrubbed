@@ -1,4 +1,4 @@
-name: Release Container Image
+name: Release Container Image - Standalone
 
 on:
   schedule:
@@ -28,7 +28,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            quay.io/adfinis/signalilo-scrubbed
+            quay.io/adfinis/scrubbed
           tags: |
             type=schedule,pattern=nightly
             type=edge
@@ -46,7 +46,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
 
       - name: Build and push
-        id: docker_build_ghcr
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .

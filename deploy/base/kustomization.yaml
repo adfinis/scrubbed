@@ -2,20 +2,20 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - serviceaccount.yaml
-  - deployment.yaml
-  - service.yaml
-  - configmap-scrubbed.yaml
-  - configmap-signalilo.yaml
-  - prometheusrule.yaml
+- serviceaccount.yaml
+- deployment.yaml
+- service.yaml
+- configmap-scrubbed.yaml
+- configmap-signalilo.yaml
+- prometheusrule.yaml
 
 images:
-  - name: signalilo-scrubbed
-    newName: quay.io/adfinis/signalilo-scrubbed
-    newTag: v0.0.2
+- name: signalilo-scrubbed
+  newName: quay.io/adfinis/signalilo-scrubbed
+  newTag: v0.0.3
 
 labels:
-  - includeSelectors: true
-    pairs:
-      app.kubernetes.io/name: signalilo-scrubbed
-      app.kubernetes.io/component: alerting
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/component: alerting
+    app.kubernetes.io/name: signalilo-scrubbed

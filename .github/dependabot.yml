@@ -13,7 +13,7 @@ updates:
     commit-message:
       prefix: "chore(ci): "
     open-pull-requests-limit: 10
-  - package-ecosystem: "pip"
+  - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "daily"

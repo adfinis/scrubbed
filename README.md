@@ -1,12 +1,10 @@
-# Signalilo With Alert Content Scrubbing
+# Alertmanager Webhook Content Scrubber
 
-This repository creates and publishes Docker image for deployment of upstream Signalilo with Alertmanager filtering proxy added.
+This repository creates and publishes Docker image for deployment of Alertmanager filtering proxy.
+
 This proxy is useful for preventing sensitive information (e.g. IP addressess, hostnames, alert descriptions, etc.) leaving organisational boundaries when monitoring is outsourced to external entity.
 
-For convenience, filtering proxy is coupled with Signalilo. It can be easily separated if alternative alertmanager webhook receiver is used.
-
-Raise a PR if you have a use case.
-
+For convenience, Dockerfile to couple filtering proxy with Signalilo is also provided.
 
 ## Installation
 
@@ -22,6 +20,10 @@ Separately deploy Secret named `signalilo`, containing key/value pairs:
 SIGNALILO_ALERTMANAGER_BEARER_TOKEN: foo
 SIGNALILO_ICINGA_PASSWORD: bar
 ```
+
+### Proxy
+
+Implicitly uses default HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables
 
 ### Alertmanager
 
