@@ -20,4 +20,4 @@ jobs:
         with:
           github-token: ${{ secrets.PAT }}
           allow-initial-development-versions: true
-          hooks: exec
+          hooks: exec,git
