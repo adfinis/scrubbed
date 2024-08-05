@@ -1,0 +1,10 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: scrubbed
+spec:
+  ports:
+    - name: signalilo
+      protocol: TCP
+      port: 8888
+      targetPort: 8888

@@ -4,26 +4,19 @@ This repository creates and publishes Docker image for deployment of Alertmanage
 
 This proxy is useful for preventing sensitive information (e.g. IP addressess, hostnames, alert descriptions, etc.) leaving organisational boundaries when monitoring is outsourced to external entity.
 
-For convenience, Dockerfile to couple filtering proxy with Signalilo is also provided.
+For convenience, Dockerfile and deployment to couple filtering proxy with Signalilo is also provided.
 
 ## Installation
 
-See `deploy/` for Kustomize based deployment.
+See `deploy/kustomize` for Kustomize based deployment.
 
 ## Configuration
 
-Patch ConfigMaps using Kustomize overlay. Example provided in `deploy/overlays/example`.
-
-Separately deploy Secret named `signalilo`, containing key/value pairs:
-
-```
-SIGNALILO_ALERTMANAGER_BEARER_TOKEN: foo
-SIGNALILO_ICINGA_PASSWORD: bar
-```
+Patch ConfigMaps using Kustomize overlay. Examples provided in `deploy/kustomize/overlays`.
 
 ### Proxy
 
-Implicitly uses default HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables
+Implicitly uses default HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables.
 
 ### Alertmanager
 
@@ -34,7 +27,7 @@ receivers:
   - name: Default
     webhook_configs:
       - url: >-
-          http://signalilo-scrubbed.signalilo-scrubbed.svc.cluster.local:8080/webhook
+          http://scrubbed.scrubbed.svc.cluster.local:8080/webhook
         send_resolved: true
         http_config:
           bearer_token: "foo"
