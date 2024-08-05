@@ -1,0 +1,7 @@
+{
+  "plugins": [
+    ["@semantic-release/exec", {
+      "publishCmd": "sed -i 's/\(newTag:\).*/\1 ${nextRelease.version}/' deploy/kustomize/overlays/*/kustomization.yaml"
+    }],
+  ]
+}
