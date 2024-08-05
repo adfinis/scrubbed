@@ -8,7 +8,7 @@ data:
   SCRUBBED_ALERT_LABELS: alertname severity
   SCRUBBED_COMMON_ANNOTATIONS: ''
   SCRUBBED_COMMON_LABELS: alertname severity
-  SCRUBBED_DESTINATION_URL: 'http://signalilo-scrubbed:8888/webhook'
+  SCRUBBED_DESTINATION_URL: 'http://receiver:8888/webhook'
   SCRUBBED_GROUP_LABELS: ''
   SCRUBBED_LISTEN_PORT: '8080'
   SCRUBBED_LOG_LEVEL: INFO
