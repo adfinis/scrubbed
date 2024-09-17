@@ -1,0 +1,8 @@
+image:
+  repository: quay.io/adfinis/scrubbed-signalilo
+
+scrubbed:
+  destinationURL: "http://signalilo:8888/webhook"
+
+signalilo:
+  enabled: true

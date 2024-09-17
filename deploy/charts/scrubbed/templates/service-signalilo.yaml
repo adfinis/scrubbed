@@ -1,0 +1,25 @@
+{{- if .Values.signalilo.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.signalilo.serviceName }}
+  labels:
+    {{- include "scrubbed.labels" . | nindent 4 }}
+    app.kubernetes.io/component: signalilo
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: signalilo
+    port: {{ .Values.signalilo.listenPort }}
+    protocol: TCP
+    targetPort: {{ .Values.signalilo.listenPort }}
+  selector:
+    {{- include "scrubbed.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: scrubbed
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP
+{{- end -}}
