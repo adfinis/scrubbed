@@ -60,7 +60,7 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
-      serviceAccountName: scrubbed
+      serviceAccountName: {{ include "scrubbed.fullname" . }}
       terminationGracePeriodSeconds: 10
       tolerations:
       - effect: NoSchedule
