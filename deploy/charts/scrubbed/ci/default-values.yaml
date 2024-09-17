@@ -7,3 +7,8 @@ scrubbed:
 signalilo:
   enabled: true
   testSecret: true
+  icingaURL: |
+    https://master1.icinga.example.com:5665
+    https://master2.icinga.example.com:5665
+  icingaHostname: test
+  icingaUsername: test
