@@ -22,6 +22,8 @@ scrubbed:
   groupLabels: ""
   # -- Destination URL to send scrubbed alerts to
   destinationURL: "http://alert-receiver:8888/webhook"
+  # -- Listener host of Scrubbed service
+  listenHost: "0.0.0.0"
   # -- Listener port of Scrubbed service
   listenPort: "8080"
   # -- Scrubbed log level

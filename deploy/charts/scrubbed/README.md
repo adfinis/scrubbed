@@ -1,6 +1,6 @@
 # scrubbed
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.0](https://img.shields.io/badge/AppVersion-0.3.0-informational?style=flat-square)
+![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.0](https://img.shields.io/badge/AppVersion-v0.3.0-informational?style=flat-square)
 
 Deploy Scrubbed via Helm
 
@@ -28,6 +28,7 @@ Deploy Scrubbed via Helm
 | scrubbed.groupLabels | string | `""` | Space separated list of group labels to keep |
 | scrubbed.image.repository | string | `"quay.io/adfinis/scrubbed"` | Scrubbed image repository |
 | scrubbed.image.tag | string | `nil` | Scrubbed image version |
+| scrubbed.listenHost | string | `"0.0.0.0"` | Listener host of Scrubbed service |
 | scrubbed.listenPort | string | `"8080"` | Listener port of Scrubbed service |
 | scrubbed.logLevel | string | `"INFO"` | Scrubbed log level |
 | scrubbed.replicaCount | int | `1` | Number of replicas |
