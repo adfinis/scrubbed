@@ -1,0 +1,86 @@
+# Default values for scrubbed chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Scrubbed image repository
+  repository: quay.io/adfinis/scrubbed
+  # -- Scrubbed image version
+  tag: ~
+
+# -- Number of replicas
+replicaCount: 1
+
+scrubbed:
+  # -- Space separated list of alert annotations to keep
+  alertAnnotations: ""
+  # -- Space separated list of alert labels to keep
+  alertLabels: "alertname severity"
+  # -- Space separated list of common annotations to keep
+  commonAnnotations: ""
+  # -- Space separated list of common labels to keep
+  commonLabels: "alertname severity"
+  # -- Space separated list of group labels to keep
+  groupLabels: ""
+  # -- Destination URL to send scrubbed alerts to
+  destinationURL: "http://alert-receiver:8888/webhook"
+  # -- Listener host of Scrubbed service
+  listenHost: "0.0.0.0"
+  # -- Listener port of Scrubbed service
+  listenPort: "8080"
+  # -- Scrubbed log level
+  logLevel: "INFO"
+  # -- Resource limits and requests for scrubbed
+  resources:
+    {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 32Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 16Mi
+  # -- Scrubbed service name
+  serviceName: scrubbed
+
+signalilo:
+  # -- Enable Signalilo sidecar. If enabled, use image scrubbed-signalilo.
+  enabled: false
+  # -- The name of an annotation to retrieve the plugin_output from
+  alertmanagerPluginOutputAnnotations: |
+    description
+    message
+  # -- Listen port of Signalilo service
+  listenPort: "8888"
+  # -- A PEM string of the trusted CA certificate for the Icinga2 API certificate
+  icingaCA: ""
+  # --  If true, enable debugging mode in Icinga client
+  debug: "0"
+  # -- Name of the Servicehost in Icinga2
+  icingaHostname: ""
+  # -- URL of the Icinga API. It's possible to specify one or more URLs. The Parameter content will be split on newline character
+  icingaURL: ""
+  # -- Authentication against Icinga2 API.
+  icingaUsername: ""
+  # -- UUID which identifies the Signalilo instance.
+  icingaUUID: "00000000-0000-0000-0000-000000000000"
+  # -- Resource limits and requests for scrubbed
+  resources:
+    {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 32Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 16Mi
+  # -- Signalilo service name
+  serviceName: signalilo
+  # -- generate secret for CI testing, if false provide your own. Required keys are SIGNALILO_ALERTMANAGER_BEARER_TOKEN and SIGNALILO_ICINGA_PASSWORD
+  testSecret: false
