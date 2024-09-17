@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.scrubbed.serviceName }}
+  labels:
+    {{- include "scrubbed.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scrubbed
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: scrubbed
+    port: {{ .Values.scrubbed.listenPort }}
+    protocol: TCP
+    targetPort: {{ .Values.scrubbed.listenPort }}
+  selector:
+    {{- include "scrubbed.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: scrubbed
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP

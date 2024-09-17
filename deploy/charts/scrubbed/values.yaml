@@ -1,0 +1,60 @@
+# Default values for scrubbed chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+scrubbed:
+  image:
+    # -- Scrubbed image repository
+    repository: quay.io/adfinis/scrubbed
+    # -- Scrubbed image version
+    tag: ~
+  # -- Number of replicas
+  replicaCount: 1
+  # -- Space separated list of alert annotations to keep
+  alertAnnotations: ""
+  # -- Space separated list of alert labels to keep
+  alertLabels: "alertname severity"
+  # -- Space separated list of common annotations to keep
+  commonAnnotations: ""
+  # -- Space separated list of common labels to keep
+  commonLabels: "alertname severity"
+  # -- Space separated list of group labels to keep
+  groupLabels: ""
+  # -- Destination URL to send scrubbed alerts to
+  destinationURL: "http://alert-receiver:8888/webhook"
+  # -- Listener port of Scrubbed service
+  listenPort: "8080"
+  # -- Scrubbed log level
+  logLevel: "INFO"
+  # -- Resource limits and requests for scrubbed
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 32Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 16Mi
+  # -- Scrubbed service name
+  serviceName: scrubbed
+
+# signalilo:
+#   enabled: true
+#   alertmanagerPluginoutputAnnotations: |
+#     description
+#     message
+#   alertmanagerPort: "8888"
+#   icingaCA: |
+#     -----BEGIN CERTIFICATE-----
+#     -----END CERTIFICATE-----
+#   debug: "0"
+#   icingaHostname: ""
+#   icingaURL: ""
+#   icingaUsername: ""
+#   icingaUUID: ""
+# externalSecret:
+#   enabled: true
+#   name: adfinis-alerting
