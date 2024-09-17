@@ -6,3 +6,4 @@ scrubbed:
 
 signalilo:
   enabled: true
+  testSecret: true
