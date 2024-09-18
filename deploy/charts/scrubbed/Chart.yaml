@@ -3,7 +3,7 @@ name: scrubbed
 description: Deploy Scrubbed via Helm
 type: application
 version: 0.1.0
-appVersion: "v0.3.0"
+appVersion: "v0.4.1"
 keywords:
   - scrubbed
   - alertmanager
