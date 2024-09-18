@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/go-playground/validator/v10 v10.22.0
+	github.com/go-playground/validator/v10 v10.22.1
 	github.com/gorilla/mux v1.8.1
 )
 
