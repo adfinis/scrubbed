@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "scrubbed.fullname" . }}
+  labels:
+    {{- include "scrubbed.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scrubbed
+data:
+  SCRUBBED_ALERT_ANNOTATIONS: {{ .Values.scrubbed.alertAnnotations | quote }}
+  SCRUBBED_ALERT_LABELS: {{ .Values.scrubbed.alertLabels | quote }}
+  SCRUBBED_COMMON_ANNOTATIONS: {{ .Values.scrubbed.commonAnnotations | quote }}
+  SCRUBBED_COMMON_LABELS: {{ .Values.scrubbed.commonLabels | quote }}
+  SCRUBBED_GROUP_LABELS: {{ .Values.scrubbed.groupLabels | quote }}
+  SCRUBBED_DESTINATION_URL: {{ .Values.scrubbed.destinationURL | quote }}
+  SCRUBBED_LISTEN_PORT: {{ .Values.scrubbed.listenPort | quote }}
+  SCRUBBED_LISTEN_HOST: {{ .Values.scrubbed.listenHost | quote }}
+  SCRUBBED_LOG_LEVEL: {{ .Values.scrubbed.logLevel | quote }}
