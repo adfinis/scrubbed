@@ -12,10 +12,12 @@ RUN make build
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:9.4
 
+RUN mkdir -p licenses
+
+COPY LICENSE licenses/LICENSE
+
 COPY --from=builder /src/scrubbed /usr/local/bin/
 
-EXPOSE 8080
-
-EXPOSE 8443
+USER 65532:65532
 
 ENTRYPOINT ["/usr/local/bin/scrubbed"]
