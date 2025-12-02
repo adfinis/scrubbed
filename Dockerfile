@@ -10,7 +10,7 @@ COPY *.go Makefile .
 
 RUN make build
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:9.5
+FROM registry.access.redhat.com/ubi9/ubi-micro:9.7
 
 RUN mkdir -p licenses
 
