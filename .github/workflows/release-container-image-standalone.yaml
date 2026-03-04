@@ -38,7 +38,7 @@ jobs:
             type=ref,event=pr
 
       - name: Login to quay.io
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME}}
