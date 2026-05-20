@@ -12,7 +12,7 @@ RUN make build
 
 FROM quay.io/vshn/signalilo:v0.14.0 AS signalilo
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:9.5
+FROM registry.access.redhat.com/ubi9/ubi-micro:9.8
 
 RUN mkdir -p licenses
 
