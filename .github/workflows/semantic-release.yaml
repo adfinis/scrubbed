@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
       - name: Run go-semantic-release
         id: semrel
-        uses: go-semantic-release/action@db17a25cd5a42d2f8af79ff9b68a777b9ba82549 # v1.23.1
+        uses: go-semantic-release/action@2e9dc4247a6004f8377781bef4cb9dad273a741f # v1.24.1
         with:
           github-token: ${{ secrets.PAT }}
           allow-initial-development-versions: true
