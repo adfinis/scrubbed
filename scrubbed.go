@@ -187,6 +187,9 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -195,8 +198,6 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
 			return
 		}
-
-		defer resp.Body.Close()
 
 		// Prepare response to original webhook caller based on response we receive.
 
