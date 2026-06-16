@@ -46,4 +46,4 @@ tidy: ## Tidy go.mod
 
 .PHONY: build
 build: ## Build scrubbed
-	go build
+	CGO_ENABLED=0 go build

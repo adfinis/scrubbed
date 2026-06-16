@@ -10,14 +10,10 @@ COPY *.go Makefile .
 
 RUN make build
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:9.5
+FROM scratch
 
-RUN mkdir -p licenses
-
-COPY LICENSE licenses/LICENSE
-
-COPY --from=builder /src/scrubbed /usr/local/bin/
+COPY --from=builder /src/scrubbed /
 
 USER 65532:65532
 
-ENTRYPOINT ["/usr/local/bin/scrubbed"]
+ENTRYPOINT ["/scrubbed"]
