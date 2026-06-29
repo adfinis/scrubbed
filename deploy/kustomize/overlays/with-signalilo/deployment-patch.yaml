@@ -25,7 +25,7 @@ spec:
           terminationMessagePath: /dev/termination-log
           name: signalilo
           command:
-            - signalilo
+            - /signalilo
           livenessProbe:
             httpGet:
               path: /healthz

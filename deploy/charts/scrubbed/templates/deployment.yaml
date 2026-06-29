@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - command:
-        - scrubbed
+        - /scrubbed
         envFrom:
         - configMapRef:
             name: {{ include "scrubbed.fullname" . }}
@@ -59,7 +59,7 @@ spec:
         terminationMessagePolicy: File
 {{- if .Values.signalilo.enabled }}
       - command:
-        - signalilo
+        - /signalilo
         envFrom:
         - configMapRef:
             name: {{ include "scrubbed.fullname" . }}-signalilo

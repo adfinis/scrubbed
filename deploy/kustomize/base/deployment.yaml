@@ -31,7 +31,7 @@ spec:
           terminationMessagePath: /dev/termination-log
           name: scrubbed
           command:
-            - scrubbed
+            - /scrubbed
           livenessProbe:
             httpGet:
               path: /healthz
