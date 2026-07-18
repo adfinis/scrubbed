@@ -53,7 +53,7 @@ jobs:
             quay.io/adfinis/scrubbed-signalilo
           tags: |
             type=schedule,pattern=nightly
-            type=edge,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
+            type=edge,enable=${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
             type=ref,event=pr
             type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=v${{ steps.get-version.outputs.version }}
             type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=${{ steps.get-version.outputs.major }}
