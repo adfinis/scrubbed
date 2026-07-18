@@ -23,3 +23,19 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+  - package-ecosystem: "custom"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore(deps): "
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+    patterns:
+      - regex: 'GO_LINT_VERSION=(?<version>v[0-9]+\.[0-9]+\.[0-9]+)'
+        dep-name-template: "golangci-lint"
+      - regex: 'GO_SEC_URI=github\.com/securego/gosec/v2/cmd/gosec@(?<version>v[0-9]+\.[0-9]+\.[0-9]+)'
+        dep-name-template: "gosec"
+      - regex: 'GO_VULNCHECK_URI=golang\.org/x/vuln/cmd/govulncheck@(?<version>v[0-9]+\.[0-9]+\.[0-9]+)'
+        dep-name-template: "govulncheck"
