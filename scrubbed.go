@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,7 +10,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -55,7 +59,7 @@ type statusResponse struct {
 type HookMessage struct {
 	Version           string            `json:"version" validate:"required"`
 	GroupKey          string            `json:"groupKey" validate:"required"`
-	TruncatedAlerts   int               `json:"truncatedAlerts" validate:"number"`
+	TruncatedAlerts   int               `json:"truncatedAlerts"`
 	Status            string            `json:"status" validate:"required"`
 	Receiver          string            `json:"receiver" validate:"required"`
 	GroupLabels       map[string]string `json:"groupLabels" validate:"required"`
@@ -70,8 +74,8 @@ type Alert struct {
 	Status       string            `json:"status"             validate:"required"`
 	Labels       map[string]string `json:"labels"             validate:"required"`
 	Annotations  map[string]string `json:"annotations"        validate:"required"`
-	StartsAt     string            `json:"startsAt,omitempty" validate:"required"`
-	EndsAt       string            `json:"endsAt,omitempty"   validate:"required"`
+	StartsAt     time.Time         `json:"startsAt,omitempty" validate:"required"`
+	EndsAt       time.Time         `json:"endsAt,omitempty"`
 	GeneratorURL string            `json:"generatorURL"       validate:"required"`
 	Fingerprint  string            `json:"fingerprint"        validate:"required"`
 }
@@ -82,7 +86,7 @@ func main() {
 
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Parsing environment variables", "error", err)
+		log.Fatalf("Failed to parse environment variables: %v", err)
 	}
 
 	level := slog.LevelInfo
@@ -97,27 +101,49 @@ func main() {
 	router.HandleFunc("/webhook", webhookHandler(cfg, postToWebhook)).Methods("POST")
 	router.HandleFunc("/healthz", healthCheckHandler).Methods("GET")
 
-	slog.Info("Starting server", "Host", cfg.Host, "Port", cfg.Port)
-	{
+	server := &http.Server{
+		Addr:         cfg.Host + ":" + cfg.Port,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		Handler:      router,
+		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
+	}
+
+	// Channel to listen for OS signals.
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start server in a goroutine.
+	go func() {
+		slog.Info("Starting server", "Host", cfg.Host, "Port", cfg.Port)
+
 		var err error
-
-		server := &http.Server{
-			Addr:         cfg.Host + ":" + cfg.Port,
-			ReadTimeout:  10 * time.Second,
-			WriteTimeout: 10 * time.Second,
-			Handler:      router,
-		}
-
 		if cfg.TLSEnable {
 			err = server.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
 		} else {
 			err = server.ListenAndServe()
 		}
 
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			slog.Error("Server failed", "error", err)
 		}
+	}()
+
+	// Block until we receive a signal.
+	sig := <-quit
+	slog.Info("Shutting down server", "signal", sig)
+
+	// Create a context with a 5-second timeout for graceful shutdown.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("Server forced to shutdown", "error", err)
 	}
+
+	slog.Info("Server exited gracefully")
 }
 
 func postToWebhook(url string, header http.Header, body io.Reader) (*http.Response, error) {
@@ -146,30 +172,38 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 		if mediaType != "application/json" {
 			msg := "Content-Type header is not application/json"
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusUnsupportedMediaType)
+			writeError(w, msg, http.StatusUnsupportedMediaType)
 
 			return
 		}
 
-		// Decode body to HookMessage struct.
+		// Decode body to HookMessage struct with a 128KB limit.
+		r.Body = http.MaxBytesReader(w, r.Body, 128*1024)
 		if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 			msg := fmt.Sprintf("Failed to decode JSON: %v", err)
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusBadRequest)
+			writeError(w, msg, http.StatusBadRequest)
 
 			return
 		}
 
-		slog.Debug("Received JSON: " + toJSONString(alert))
+		jsonStr, err := toJSONString(alert)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to marshal alert to JSON: %v", err)
+			slog.Error(msg)
+			writeError(w, msg, http.StatusInternalServerError)
+			return
+		}
+		slog.Debug("Received JSON: " + jsonStr)
 
 		// Validate HookMessage.
 		validate := validator.New()
-		err := validate.Struct(alert)
+		err = validate.Struct(alert)
 
 		if err != nil {
 			msg := fmt.Sprintf("Failed to validate JSON structure: %v", err)
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusBadRequest)
+			writeError(w, msg, http.StatusBadRequest)
 
 			return
 		}
@@ -177,14 +211,21 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 		// Scrub it.
 		scrub(&alert, cfg)
 
-		slog.Debug("Sending JSON: " + toJSONString(alert))
+		jsonStr, err = toJSONString(alert)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to marshal scrubbed alert to JSON: %v", err)
+			slog.Error(msg)
+			writeError(w, msg, http.StatusInternalServerError)
+			return
+		}
+		slog.Debug("Sending JSON: " + jsonStr)
 
 		// Post it to upstream URL.
-		resp, err := postFunc(cfg.Url, r.Header, strings.NewReader(toJSONString(alert)))
+		resp, err := postFunc(cfg.Url, r.Header, strings.NewReader(jsonStr))
 		if err != nil {
 			msg := fmt.Sprintf("Failed to post to webhook: %v", err)
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
+			writeError(w, msg, http.StatusInternalServerError)
 			return
 		}
 		defer func() {
@@ -195,7 +236,7 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 		if err != nil {
 			msg := fmt.Sprintf("Couldn't read received body %v", err)
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
+			writeError(w, msg, http.StatusInternalServerError)
 			return
 		}
 
@@ -217,7 +258,7 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			msg := fmt.Sprintf("Failed to encode: %v", err)
 			slog.Error(msg)
-			http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
+			writeError(w, msg, http.StatusInternalServerError)
 
 			return
 		}
@@ -228,9 +269,7 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write([]byte("OK")); err != nil {
-		msg := fmt.Sprintf("Failed to write a response: %v", err)
-		slog.Error(msg)
-		http.Error(w, toJSONString(statusResponse{Status: "error", Message: msg}), http.StatusInternalServerError)
+		slog.Error("Failed to write health check response", "error", err)
 
 		return
 	}
@@ -268,11 +307,20 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func toJSONString(v interface{}) string {
+func toJSONString(v interface{}) (string, error) {
 	bytes, err := json.Marshal(v)
 	if err != nil {
-		log.Fatalf("Failed to marshal JSON: %v", err)
+		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	return string(bytes)
+	return string(bytes), nil
+}
+
+func writeError(w http.ResponseWriter, msg string, statusCode int) {
+	jsonStr, err := toJSONString(statusResponse{Status: "error", Message: msg})
+	if err != nil {
+		http.Error(w, `{"status":"error","message":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
+	http.Error(w, jsonStr, statusCode)
 }
