@@ -12,7 +12,7 @@ jobs:
   lint:
     strategy:
       matrix:
-        go: ["1.25.11"]
+        go: ["1.25.12"]
       fail-fast: true
     runs-on: ubuntu-latest
     steps:
