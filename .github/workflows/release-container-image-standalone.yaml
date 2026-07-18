@@ -9,6 +9,8 @@ on:
       - main
     tags:
       - 'v*.*.*'
+  release:
+    types: [published]
 
 jobs:
   container:
@@ -31,7 +33,7 @@ jobs:
             quay.io/adfinis/scrubbed
           tags: |
             type=schedule,pattern=nightly
-            type=edge
+            type=edge,enable=${{ github.event_name != 'release' }}
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}
             type=semver,pattern=v{{major}}.{{minor}}
