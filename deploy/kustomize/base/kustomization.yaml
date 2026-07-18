@@ -7,7 +7,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - configmap.yaml
-  - prometheusrule.yaml
 
 labels:
   - includeSelectors: true

@@ -4,7 +4,9 @@
       "@semantic-release/exec",
       {
         "publishCmd": "echo \"Running sed with exec plugin\" && sed -i 's/\\(newTag:\\).*/\\1 ${nextRelease.version}/' deploy/kustomize/overlays/*/kustomization.yaml"
-      },
+      }
+    ],
+    [
       "@semantic-release/git",
       {
         "assets": [
