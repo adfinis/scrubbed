@@ -7,23 +7,43 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Create Semantic Release"]
+    types:
+      - completed
 
 jobs:
   container:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Get version from tag
+        id: get-version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            git fetch --tags --force
+            TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1)
+            if [[ -n "$TAG" ]]; then
+              VERSION="${TAG#v}"
+              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+              echo "major=v${VERSION%%.*}" >> "$GITHUB_OUTPUT"
+              MINOR="${VERSION#*.}"
+              echo "minor=v${VERSION%%.*}.${MINOR%%.*}" >> "$GITHUB_OUTPUT"
+              echo "found=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       - name: Configure Image Metadata
         id: meta
@@ -33,11 +53,12 @@ jobs:
             quay.io/adfinis/scrubbed
           tags: |
             type=schedule,pattern=nightly
-            type=edge,enable=${{ github.event_name != 'release' }}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}
-            type=semver,pattern=v{{major}}.{{minor}}
+            type=edge,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
             type=ref,event=pr
+            type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=v${{ steps.get-version.outputs.version }}
+            type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=${{ steps.get-version.outputs.major }}
+            type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=${{ steps.get-version.outputs.minor }}
+            type=raw,enable=${{ steps.get-version.outputs.found == 'true' }},value=latest
 
       - name: Login to quay.io
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
