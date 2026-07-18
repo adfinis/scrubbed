@@ -12,7 +12,13 @@ spec:
         - effect: NoSchedule
           operator: Exists
       containers:
-        - resources:
+        - securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
             limits:
               cpu: 100m
               memory: 32Mi
@@ -37,6 +43,7 @@ spec:
               path: /healthz
               port: 8080
               scheme: HTTP
+            initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 10
             successThreshold: 1
@@ -53,7 +60,8 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 10
       dnsPolicy: ClusterFirst
-      securityContext: {}
+      securityContext:
+        runAsNonRoot: true
   strategy:
     type: RollingUpdate
     rollingUpdate:
