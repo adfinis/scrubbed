@@ -83,6 +83,7 @@ var (
 		RedactedString: "REDACTED",
 		AlertLabels:    []string{"alertname", "severity"},
 		CommonLabels:   []string{"alertname", "severity"},
+		MaxBodySize:    128 * 1024,
 		Url:            "http://foo.bar.baz:444/hello",
 	}
 
@@ -250,5 +251,21 @@ func TestWebhookHandlerInvalidJSON(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf(`webhookHandler return code is %v, expected %v`, w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestWebhookHandlerConfigurableBodySizeLimit(t *testing.T) {
+	t.Parallel()
+
+	r, _ := http.NewRequest("POST", "/webhook", strings.NewReader(validHookMessageString))
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	config := cfg
+	config.MaxBodySize = 8
+	webhookHandler(config, postToWebhookMock)(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf(`webhookHandler return code is %v, expected %v for body larger than configured limit`, w.Code, http.StatusBadRequest)
 	}
 }
