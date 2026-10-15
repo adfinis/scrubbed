@@ -46,6 +46,8 @@ type Config struct {
 	TLSCertPath string `env:"SCRUBBED_LISTEN_TLS_CERT_PATH" envDefault:"tls.crt"`
 	// Path to TLS key
 	TLSKeyPath string `env:"SCRUBBED_LISTEN_TLS_KEY_PATH" envDefault:"tls.key"`
+	// Maximum webhook request body size in bytes
+	MaxBodySize int64 `env:"SCRUBBED_MAX_BODY_SIZE" envDefault:"131072"`
 	// Webhook destination URL e.g. https://monitoring.example.com/webhook?foo=bar
 	Url string `env:"SCRUBBED_DESTINATION_URL,required"`
 }
@@ -177,8 +179,8 @@ func webhookHandler(cfg Config, postFunc func(string, http.Header, io.Reader) (*
 			return
 		}
 
-		// Decode body to HookMessage struct with a 128KB limit.
-		r.Body = http.MaxBytesReader(w, r.Body, 128*1024)
+		// Decode body to HookMessage struct with a configurable size limit.
+		r.Body = http.MaxBytesReader(w, r.Body, cfg.MaxBodySize)
 		if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 			msg := fmt.Sprintf("Failed to decode JSON: %v", err)
 			slog.Error(msg)
