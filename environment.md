@@ -14,5 +14,5 @@
  - `SCRUBBED_LISTEN_TLS_ENABLE` (default: `FALSE`) - Enable TLS
  - `SCRUBBED_LISTEN_TLS_CERT_PATH` (default: `tls.crt`) - Path to TLS certificate
  - `SCRUBBED_LISTEN_TLS_KEY_PATH` (default: `tls.key`) - Path to TLS key
+ - `SCRUBBED_MAX_BODY_SIZE` (default: `131072`) - Maximum webhook request body size in bytes
  - `SCRUBBED_DESTINATION_URL` (**required**) - Webhook destination URL e.g. https://monitoring.example.com/webhook?foo=bar
-
