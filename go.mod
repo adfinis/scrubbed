@@ -1,9 +1,9 @@
 module github.com/adfinis/scrubbed
 
-go 1.25.12
+go 1.26.0
 
 require (
-	github.com/caarlos0/env/v11 v11.4.1
+	github.com/caarlos0/env/v11 v11.4.2
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/gorilla/mux v1.8.1
 )
