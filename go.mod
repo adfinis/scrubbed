@@ -1,6 +1,6 @@
 module github.com/adfinis/scrubbed
 
-go 1.26.0
+go 1.26.11
 
 require (
 	github.com/caarlos0/env/v11 v11.4.1
